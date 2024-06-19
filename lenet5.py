@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+from torch.nn import functional as F
 
 
 class LeNet5(nn.Module):
@@ -17,7 +18,7 @@ class LeNet5(nn.Module):
         # flatten
         # fc unit
         self.fc_unit = nn.Sequential(
-            nn.Linear(2, 120),
+            nn.Linear(16 * 5 * 5, 120),
             nn.ReLU(),
             nn.Linear(120, 84),
             nn.ReLU(),
@@ -27,11 +28,27 @@ class LeNet5(nn.Module):
         # [b, 3, 32, 32]
         tmp = torch.randn(2, 3, 32, 32)
         out = self.conv_unit(tmp)
+        # [b, 16, 5, 5]
         print('conv out:', out.shape)
+
+    def forward(self, x):
+        batch_size = x.size(0)
+        # [b, 3, 32, 32] => [b, 16, 5, 5]
+        x = self.conv_unit(x)
+        # [b, 16, 5, 5] => [b, 16 * 5 * 5]
+        x = x.view(batch_size, 16 * 5 * 5)
+        # [b, 16 * 5 * 5] => [b, 10]
+        logits = self.fc_unit(x)
+
+        return logits
 
 
 def main():
     net = LeNet5()
+
+    tmp = torch.randn(2, 3, 32, 32)
+    out = net(tmp)
+    print('lenet out:', out.shape)
 
 
 if __name__ == '__main__':
