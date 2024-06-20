@@ -31,6 +31,7 @@ def main():
     print(model)
 
     for epoch in range(1000):
+        model.train()
         for batch_idx, (x, label) in enumerate(cifar_train):
             # [b, 3, 32, 32]
             # [b]
@@ -49,6 +50,27 @@ def main():
 
         #
         print(epoch, loss.item())
+
+        model.eval()
+        with torch.no_grad():
+            # test
+            total_correct = 0
+            total_num = 0
+            for x, label in cifar_test:
+                # [b, 3, 32, 32]
+                # [b]
+                x, label = x.to(device), label.to(device)
+
+                # [b, 10]
+                logits = model(x)
+                # [b]
+                pred = logits.argmax(dim=1)
+                # [b] vs [b] =>
+                total_correct += torch.eq(pred, label).float().sum().item()
+                total_num += x.size(0)
+
+            acc = total_correct / total_num
+            print(epoch, acc)
 
 
 if __name__ == '__main__':
