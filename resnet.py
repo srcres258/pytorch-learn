@@ -41,15 +41,15 @@ class ResNet18(nn.Module):
         )
         # followed by 4 blocks
         # [b, 64, h, w] => [b, 128, h, w]
-        self.block1 = ResBlock(64, 128)
+        self.block1 = ResBlock(64, 64)
         # [b, 128, h, w] => [b, 256, h, w]
-        self.block2 = ResBlock(128, 256)
+        self.block2 = ResBlock(64, 128)
         # [b, 256, h, w] => [b, 512, h, w]
-        self.block3 = ResBlock(256, 512)
+        self.block3 = ResBlock(128, 256)
         # [b, 512, h, w] => [b, 1024, h, w]
-        self.block4 = ResBlock(512, 1024)
+        self.block4 = ResBlock(256, 512)
 
-        self.out_layer = nn.Linear(512, 10)
+        self.out_layer = nn.Linear(512 * 32 * 32, 10)
 
     def forward(self, x):
         x = F.relu(self.conv1(x))
@@ -60,6 +60,7 @@ class ResNet18(nn.Module):
         x = self.block3(x)
         x = self.block4(x)
 
+        x = x.view(x.size(0), -1)
         x = self.out_layer(x)
 
         return x
@@ -70,6 +71,11 @@ def main():
     tmp = torch.randn(2, 64, 32, 32)
     out = block(tmp)
     print('block', out.shape)
+
+    model = ResNet18()
+    tmp = torch.randn(2, 3, 32, 32)
+    out = model(tmp)
+    print('resnet18', out.shape)
 
 
 if __name__ == '__main__':

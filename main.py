@@ -3,6 +3,7 @@ from torch import nn, optim
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 from lenet5 import LeNet5
+from resnet import ResNet18
 
 
 BATCH_SIZE = 32
@@ -25,7 +26,8 @@ def main():
     print('x:', x.shape, 'label:', label.shape)
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = LeNet5().to(device)
+    # model = LeNet5().to(device)
+    model = ResNet18().to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     print(model)
