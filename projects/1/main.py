@@ -36,19 +36,20 @@ class Net(nn.Module):
 
 
 def main():
-    model = Net()
-    criterion = nn.MSELoss()
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = Net().to(device)
+    criterion = nn.MSELoss().to(device)
     optimizer = optim.Adam(model.parameters(), lr=LR)
 
-    hidden_prev = torch.zeros(1, 1, HIDDEN_SIZE)
+    hidden_prev = torch.zeros(1, 1, HIDDEN_SIZE).to(device)
 
     for iter in range(6000):
         start = np.random.randint(3, size=1)[0]
         time_steps = np.linspace(start, start + 10, NUM_TIME_STEPS)
         data = np.sin(time_steps)
         data = data.reshape(NUM_TIME_STEPS, 1)
-        x = torch.tensor(data[:-1]).float().view(1, NUM_TIME_STEPS - 1, 1)
-        y = torch.tensor(data[1:]).float().view(1, NUM_TIME_STEPS - 1, 1)
+        x = torch.tensor(data[:-1]).float().view(1, NUM_TIME_STEPS - 1, 1).to(device)
+        y = torch.tensor(data[1:]).float().view(1, NUM_TIME_STEPS - 1, 1).to(device)
 
         output, hidden_prev = model(x, hidden_prev)
         hidden_prev = hidden_prev.detach()
@@ -65,8 +66,8 @@ def main():
     time_steps = np.linspace(start, start + 10, NUM_TIME_STEPS)
     data = np.sin(time_steps)
     data = data.reshape(NUM_TIME_STEPS, 1)
-    x = torch.tensor(data[:-1]).float().view(1, NUM_TIME_STEPS - 1, 1)
-    y = torch.tensor(data[1:]).float().view(1, NUM_TIME_STEPS - 1, 1)
+    x = torch.tensor(data[:-1]).float().view(1, NUM_TIME_STEPS - 1, 1).to(device)
+    y = torch.tensor(data[1:]).float().view(1, NUM_TIME_STEPS - 1, 1).to(device)
 
     predictions = []
     input = x[:, 0, :]
@@ -74,10 +75,10 @@ def main():
         input = input.view(1, 1, 1)
         (pred, hidden_prev) = model(input, hidden_prev)
         input = pred
-        predictions.append(pred.detach().numpy().ravel()[0])
+        predictions.append(pred.detach().cpu().numpy().ravel()[0])
 
-    x = x.data.numpy().ravel()
-    y = y.data.numpy()
+    x = x.data.cpu().numpy().ravel()
+    y = y.data.cpu().numpy()
     plt.scatter(time_steps[:-1], x.ravel(), s=90)
     plt.plot(time_steps[:-1], x.ravel())
 
