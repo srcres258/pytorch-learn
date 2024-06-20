@@ -39,6 +39,7 @@ def main():
             logits = model(x)
             # logits: [b, 10]
             # label:  [b]
+            # loss: tensor scalar
             loss = criterion(logits, label)
 
             # backprop
@@ -46,8 +47,8 @@ def main():
             loss.backward()
             optimizer.step()
 
-            # todo
-
+        #
+        print(epoch, loss.item())
 
 
 if __name__ == '__main__':
