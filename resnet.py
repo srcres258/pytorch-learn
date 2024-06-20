@@ -36,20 +36,20 @@ class ResNet18(nn.Module):
         super(ResNet18, self).__init__()
 
         self.conv1 = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm2d(64)
+            nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(16)
         )
         # followed by 4 blocks
         # [b, 64, h, w] => [b, 128, h, w]
-        self.block1 = ResBlock(64, 64)
+        self.block1 = ResBlock(16, 16)
         # [b, 128, h, w] => [b, 256, h, w]
-        self.block2 = ResBlock(64, 128)
-        # [b, 256, h, w] => [b, 512, h, w]
-        self.block3 = ResBlock(128, 256)
-        # [b, 512, h, w] => [b, 1024, h, w]
-        self.block4 = ResBlock(256, 512)
+        self.block2 = ResBlock(16, 32)
+        # # [b, 256, h, w] => [b, 512, h, w]
+        # self.block3 = ResBlock(128, 256)
+        # # [b, 512, h, w] => [b, 1024, h, w]
+        # self.block4 = ResBlock(256, 512)
 
-        self.out_layer = nn.Linear(512 * 32 * 32, 10)
+        self.out_layer = nn.Linear(32 * 32 * 32, 10)
 
     def forward(self, x):
         x = F.relu(self.conv1(x))
@@ -57,8 +57,8 @@ class ResNet18(nn.Module):
         # [b, 64, h, w] => [b, 1024, h, w]
         x = self.block1(x)
         x = self.block2(x)
-        x = self.block3(x)
-        x = self.block4(x)
+        # x = self.block3(x)
+        # x = self.block4(x)
 
         x = x.view(x.size(0), -1)
         x = self.out_layer(x)
