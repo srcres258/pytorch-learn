@@ -6,6 +6,7 @@ import random
 from matplotlib import pyplot as plt
 
 
+device = None
 h_dim = 400
 batch_size = 512
 viz = visdom.Visdom()
@@ -86,8 +87,43 @@ def data_generator():
 
 
 def generate_image(D, G, xr, epoch):
-    # TODO
-    pass
+    """
+    Generates and saves a plot of the true distribution, the generator, and the
+    critic.
+    :param D:
+    :param G:
+    :param xr:
+    :param epoch:
+    :return:
+    """
+    N_POINTS = 128
+    RANGE = 3
+    plt.clf()
+
+    points = np.zeros((N_POINTS, N_POINTS, 2), dtype=np.float32)
+    points[:, :, 0] = np.linspace(-RANGE, RANGE, N_POINTS)[:, None]
+    points[:, :, 1] = np.linspace(-RANGE, RANGE, N_POINTS)[None, :]
+    points = points.reshape((-1, 2))
+    # (16384, 2)
+    # print('p:', points.shape)
+
+    # draw contour
+    with torch.no_grad():
+        points = torch.Tensor(points).to(device) # [16384, 2]
+        disc_map = D(points).cpu().numpy() # [16384]
+    x = y = np.linspace(-RANGE, RANGE, N_POINTS)
+    cs = plt.contour(x, y, disc_map.reshape((len(x), len(y))).transpose())
+    plt.clabel(cs, inline=1, fontsize=10)
+    # plt.colorbar()
+
+    # draw samples
+    with torch.no_grad():
+        z = torch.randn(batch_size, 2).to(device)
+        samples = G(z).cpu().numpy()
+    plt.scatter(xr[:, 0], xr[:, 1], c='orange', marker='.')
+    plt.scatter(samples[:, 0], samples[:, 1], c='green', marker='+')
+
+    viz.matplot(plt, win='contour', opts=dict(title='p(x):%d' % epoch))
 
 
 def main():
@@ -97,8 +133,9 @@ def main():
     data_iter = data_generator()
     x = next(data_iter)
     # [b, 2]
-    # print(x.shape)
+    # print(xr.shape)
 
+    global device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     G = Generator().to(device)
     D = Discriminator().to(device)
@@ -114,9 +151,9 @@ def main():
         for _ in range(5):
             # 1.1. train on real data
             x = next(data_iter)
-            x = torch.from_numpy(x).to(device)
+            xr = torch.from_numpy(x).to(device)
             # [b, 2] => [b, 1]
-            predr = D(x)
+            predr = D(xr)
             # max predr
             lossr = -predr.mean()
 
@@ -149,7 +186,7 @@ def main():
 
         if epoch % 100 == 0:
             viz.line([[loss_D.item(), loss_G.item()]], [epoch], win='loss', update='append')
-
+            generate_image(D, G, xr.cpu(), epoch)
             print(loss_D.item(), loss_G.item())
 
 
