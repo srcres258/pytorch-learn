@@ -126,6 +126,34 @@ def generate_image(D, G, xr, epoch):
     viz.matplot(plt, win='contour', opts=dict(title='p(x):%d' % epoch))
 
 
+def gradient_penalty(D, xr, xf):
+    """
+
+    :param D:
+    :param xr:
+    :param xf:
+    :return:
+    """
+    # [b, 1]
+    t = torch.rand(batch_size, 1).to(device)
+    # [b, 1] => [b, 2]
+    t = t.expand_as(xr)
+    # interpolation
+    mid = t * xr + (1 - t) * xf
+    # set it requires gradient
+    mid.requires_grad_()
+
+    pred = D(mid)
+    grads = autograd.grad(outputs=pred, inputs=mid,
+                          grad_outputs=torch.ones_like(pred),
+                          create_graph=True, retain_graph=True,
+                          only_inputs=True)[0]
+
+    gp = torch.pow(grads.norm(2, dim=1) - 1, 2).mean()
+
+    return gp
+
+
 def main():
     torch.manual_seed(114514)
     np.random.seed(114514)
@@ -164,8 +192,11 @@ def main():
             predf = D(xf)
             lossf = predf.mean()
 
+            # 1.3. gradient penalty
+            gp = gradient_penalty(D, xr, xf.detach())
+
             # aggregate all
-            loss_D = lossr + lossf
+            loss_D = lossr + lossf + 0.2 * gp
 
             # optimize
             optim_D.zero_grad()
